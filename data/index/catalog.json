@@ -1,0 +1,584 @@
+[
+  {
+    "doc_id": "ARC-001",
+    "title": "Payment Switch Architecture",
+    "document_type": "architecture",
+    "department": "payments",
+    "access_level": "internal",
+    "created_date": "2025-08-12",
+    "tags": [
+      "architecture",
+      "payments"
+    ],
+    "namespace": "engineering",
+    "word_count": 74
+  },
+  {
+    "doc_id": "ARC-002",
+    "title": "Mobile Banking Platform Architecture",
+    "document_type": "architecture",
+    "department": "digital",
+    "access_level": "internal",
+    "created_date": "2025-10-01",
+    "tags": [
+      "architecture",
+      "digital"
+    ],
+    "namespace": "engineering",
+    "word_count": 57
+  },
+  {
+    "doc_id": "ARC-003",
+    "title": "Enterprise Integration Architecture",
+    "document_type": "architecture",
+    "department": "technology",
+    "access_level": "internal",
+    "created_date": "2026-03-18",
+    "tags": [
+      "architecture",
+      "technology"
+    ],
+    "namespace": "engineering",
+    "word_count": 65
+  },
+  {
+    "doc_id": "ARC-004",
+    "title": "AI Assistant Reference Architecture",
+    "document_type": "architecture",
+    "department": "technology",
+    "access_level": "confidential",
+    "created_date": "2026-09-02",
+    "tags": [
+      "architecture",
+      "technology"
+    ],
+    "namespace": "engineering",
+    "word_count": 55
+  },
+  {
+    "doc_id": "INC-2025-001",
+    "title": "Outage report: payment failures in Payment Switch (2025-12-02)",
+    "document_type": "incident",
+    "department": "payments",
+    "access_level": "internal",
+    "created_date": "2025-12-02",
+    "severity": "SEV2",
+    "service": "Payment Switch",
+    "tags": [
+      "outage",
+      "payments",
+      "payment-failure"
+    ],
+    "namespace": "operations",
+    "word_count": 208
+  },
+  {
+    "doc_id": "INC-2025-002",
+    "title": "Outage report: payment failures in Fund Transfer Engine (2025-12-24)",
+    "document_type": "incident",
+    "department": "payments",
+    "access_level": "internal",
+    "created_date": "2025-12-24",
+    "severity": "SEV2",
+    "service": "Fund Transfer Engine",
+    "tags": [
+      "outage",
+      "payments",
+      "payment-failure"
+    ],
+    "namespace": "operations",
+    "word_count": 215
+  },
+  {
+    "doc_id": "INC-2026-003",
+    "title": "Outage report: payment failures in Fund Transfer Engine (2026-01-29)",
+    "document_type": "incident",
+    "department": "payments",
+    "access_level": "confidential",
+    "created_date": "2026-01-29",
+    "severity": "SEV1",
+    "service": "Fund Transfer Engine",
+    "tags": [
+      "outage",
+      "payments",
+      "payment-failure"
+    ],
+    "namespace": "operations",
+    "word_count": 211
+  },
+  {
+    "doc_id": "INC-2026-004",
+    "title": "Outage report: payment failures in Card Authorisation Service (2026-02-24)",
+    "document_type": "incident",
+    "department": "payments",
+    "access_level": "confidential",
+    "created_date": "2026-02-24",
+    "severity": "SEV1",
+    "service": "Card Authorisation Service",
+    "tags": [
+      "outage",
+      "payments",
+      "payment-failure"
+    ],
+    "namespace": "operations",
+    "word_count": 211
+  },
+  {
+    "doc_id": "INC-2026-005",
+    "title": "Outage report: payment failures in Bill Payments Service (2026-03-11)",
+    "document_type": "incident",
+    "department": "payments",
+    "access_level": "internal",
+    "created_date": "2026-03-11",
+    "severity": "SEV2",
+    "service": "Bill Payments Service",
+    "tags": [
+      "outage",
+      "payments",
+      "payment-failure"
+    ],
+    "namespace": "operations",
+    "word_count": 216
+  },
+  {
+    "doc_id": "INC-2026-006",
+    "title": "Outage report: payment failures in Bill Payments Service (2026-04-08)",
+    "document_type": "incident",
+    "department": "payments",
+    "access_level": "confidential",
+    "created_date": "2026-04-08",
+    "severity": "SEV1",
+    "service": "Bill Payments Service",
+    "tags": [
+      "outage",
+      "payments",
+      "payment-failure"
+    ],
+    "namespace": "operations",
+    "word_count": 211
+  },
+  {
+    "doc_id": "INC-2026-007",
+    "title": "Outage report: payment failures in Bill Payments Service (2026-04-29)",
+    "document_type": "incident",
+    "department": "payments",
+    "access_level": "confidential",
+    "created_date": "2026-04-29",
+    "severity": "SEV1",
+    "service": "Bill Payments Service",
+    "tags": [
+      "outage",
+      "payments",
+      "payment-failure"
+    ],
+    "namespace": "operations",
+    "word_count": 212
+  },
+  {
+    "doc_id": "INC-2026-008",
+    "title": "Outage report: payment failures in Mobile Payments API (2026-05-23)",
+    "document_type": "incident",
+    "department": "payments",
+    "access_level": "confidential",
+    "created_date": "2026-05-23",
+    "severity": "SEV1",
+    "service": "Mobile Payments API",
+    "tags": [
+      "outage",
+      "payments",
+      "payment-failure"
+    ],
+    "namespace": "operations",
+    "word_count": 215
+  },
+  {
+    "doc_id": "INC-2026-009",
+    "title": "Outage report: payment failures in Card Authorisation Service (2026-06-21)",
+    "document_type": "incident",
+    "department": "payments",
+    "access_level": "internal",
+    "created_date": "2026-06-21",
+    "severity": "SEV2",
+    "service": "Card Authorisation Service",
+    "tags": [
+      "outage",
+      "payments",
+      "payment-failure"
+    ],
+    "namespace": "operations",
+    "word_count": 210
+  },
+  {
+    "doc_id": "INC-2026-010",
+    "title": "Outage report: payment failures in Mobile Payments API (2026-07-22)",
+    "document_type": "incident",
+    "department": "payments",
+    "access_level": "internal",
+    "created_date": "2026-07-22",
+    "severity": "SEV2",
+    "service": "Mobile Payments API",
+    "tags": [
+      "outage",
+      "payments",
+      "payment-failure"
+    ],
+    "namespace": "operations",
+    "word_count": 211
+  },
+  {
+    "doc_id": "INC-2026-011",
+    "title": "Outage report: payment failures in Payment Switch (2026-08-08)",
+    "document_type": "incident",
+    "department": "payments",
+    "access_level": "internal",
+    "created_date": "2026-08-08",
+    "severity": "SEV2",
+    "service": "Payment Switch",
+    "tags": [
+      "outage",
+      "payments",
+      "payment-failure"
+    ],
+    "namespace": "operations",
+    "word_count": 211
+  },
+  {
+    "doc_id": "INC-2026-012",
+    "title": "Outage report: payment failures in Fund Transfer Engine (2026-09-12)",
+    "document_type": "incident",
+    "department": "payments",
+    "access_level": "confidential",
+    "created_date": "2026-09-12",
+    "severity": "SEV1",
+    "service": "Fund Transfer Engine",
+    "tags": [
+      "outage",
+      "payments",
+      "payment-failure"
+    ],
+    "namespace": "operations",
+    "word_count": 212
+  },
+  {
+    "doc_id": "INC-2026-013",
+    "title": "Outage report: payment failures in Mobile Payments API (2026-09-26)",
+    "document_type": "incident",
+    "department": "payments",
+    "access_level": "internal",
+    "created_date": "2026-09-26",
+    "severity": "SEV2",
+    "service": "Mobile Payments API",
+    "tags": [
+      "outage",
+      "payments",
+      "payment-failure"
+    ],
+    "namespace": "operations",
+    "word_count": 211
+  },
+  {
+    "doc_id": "INC-2026-014",
+    "title": "Outage report: payment failures in Card Authorisation Service (2026-10-30)",
+    "document_type": "incident",
+    "department": "payments",
+    "access_level": "internal",
+    "created_date": "2026-10-30",
+    "severity": "SEV2",
+    "service": "Card Authorisation Service",
+    "tags": [
+      "outage",
+      "payments",
+      "payment-failure"
+    ],
+    "namespace": "operations",
+    "word_count": 215
+  },
+  {
+    "doc_id": "INC-2026-101",
+    "title": "Incident report: Internet banking login latency",
+    "document_type": "incident",
+    "department": "technology",
+    "access_level": "internal",
+    "created_date": "2026-03-16",
+    "severity": "SEV3",
+    "service": "Digital Channels",
+    "tags": [
+      "incident",
+      "digital-channels"
+    ],
+    "namespace": "operations",
+    "word_count": 52
+  },
+  {
+    "doc_id": "INC-2026-102",
+    "title": "Incident report: Branch teller terminal outage in Kandy region",
+    "document_type": "incident",
+    "department": "technology",
+    "access_level": "internal",
+    "created_date": "2026-05-15",
+    "severity": "SEV3",
+    "service": "Branch Operations",
+    "tags": [
+      "incident",
+      "branch-operations"
+    ],
+    "namespace": "operations",
+    "word_count": 52
+  },
+  {
+    "doc_id": "INC-2026-103",
+    "title": "Incident report: Delayed statement generation",
+    "document_type": "incident",
+    "department": "technology",
+    "access_level": "internal",
+    "created_date": "2026-07-14",
+    "severity": "SEV3",
+    "service": "Core Banking",
+    "tags": [
+      "incident",
+      "core-banking"
+    ],
+    "namespace": "operations",
+    "word_count": 52
+  },
+  {
+    "doc_id": "INC-2026-104",
+    "title": "Incident report: HR portal unavailable",
+    "document_type": "incident",
+    "department": "technology",
+    "access_level": "internal",
+    "created_date": "2026-09-12",
+    "severity": "SEV3",
+    "service": "Corporate IT",
+    "tags": [
+      "incident",
+      "corporate-it"
+    ],
+    "namespace": "operations",
+    "word_count": 46
+  },
+  {
+    "doc_id": "MTG-001",
+    "title": "Reliability review meeting notes - Q1 2026",
+    "document_type": "meeting_notes",
+    "department": "technology",
+    "access_level": "internal",
+    "created_date": "2026-04-03",
+    "tags": [
+      "meeting_notes",
+      "technology"
+    ],
+    "namespace": "operations",
+    "word_count": 59
+  },
+  {
+    "doc_id": "MTG-002",
+    "title": "Architecture board meeting notes - AI assistant",
+    "document_type": "meeting_notes",
+    "department": "technology",
+    "access_level": "confidential",
+    "created_date": "2026-08-14",
+    "tags": [
+      "meeting_notes",
+      "technology"
+    ],
+    "namespace": "operations",
+    "word_count": 46
+  },
+  {
+    "doc_id": "MTG-003",
+    "title": "Vendor sync meeting notes - gateway provider",
+    "document_type": "meeting_notes",
+    "department": "payments",
+    "access_level": "internal",
+    "created_date": "2026-07-22",
+    "tags": [
+      "meeting_notes",
+      "payments"
+    ],
+    "namespace": "operations",
+    "word_count": 64
+  },
+  {
+    "doc_id": "POL-001",
+    "title": "Information Security Policy",
+    "document_type": "policy",
+    "department": "security",
+    "access_level": "internal",
+    "created_date": "2025-03-01",
+    "tags": [
+      "policy",
+      "security"
+    ],
+    "namespace": "policies",
+    "word_count": 115
+  },
+  {
+    "doc_id": "POL-002",
+    "title": "Acceptable Use of Generative AI Policy",
+    "document_type": "policy",
+    "department": "security",
+    "access_level": "internal",
+    "created_date": "2026-02-10",
+    "tags": [
+      "policy",
+      "security"
+    ],
+    "namespace": "policies",
+    "word_count": 77
+  },
+  {
+    "doc_id": "POL-003",
+    "title": "Change Management Policy",
+    "document_type": "policy",
+    "department": "technology",
+    "access_level": "internal",
+    "created_date": "2025-06-15",
+    "tags": [
+      "policy",
+      "technology"
+    ],
+    "namespace": "policies",
+    "word_count": 81
+  },
+  {
+    "doc_id": "POL-004",
+    "title": "Incident Management Policy",
+    "document_type": "policy",
+    "department": "technology",
+    "access_level": "internal",
+    "created_date": "2025-04-20",
+    "tags": [
+      "policy",
+      "technology"
+    ],
+    "namespace": "policies",
+    "word_count": 67
+  },
+  {
+    "doc_id": "POL-005",
+    "title": "Remote Work Policy",
+    "document_type": "policy",
+    "department": "hr",
+    "access_level": "public",
+    "created_date": "2025-01-05",
+    "tags": [
+      "policy",
+      "hr"
+    ],
+    "namespace": "policies",
+    "word_count": 43
+  },
+  {
+    "doc_id": "POL-006",
+    "title": "Privileged Access Management Standard",
+    "document_type": "policy",
+    "department": "security",
+    "access_level": "restricted",
+    "created_date": "2026-05-01",
+    "tags": [
+      "policy",
+      "security"
+    ],
+    "namespace": "policies",
+    "word_count": 59
+  },
+  {
+    "doc_id": "RUN-001",
+    "title": "Runbook: Payment Switch high error rate",
+    "document_type": "runbook",
+    "department": "payments",
+    "access_level": "internal",
+    "created_date": "2025-09-01",
+    "tags": [
+      "runbook",
+      "payments"
+    ],
+    "namespace": "engineering",
+    "word_count": 98
+  },
+  {
+    "doc_id": "RUN-002",
+    "title": "Runbook: Certificate renewal for partner connectors",
+    "document_type": "runbook",
+    "department": "payments",
+    "access_level": "internal",
+    "created_date": "2026-01-20",
+    "tags": [
+      "runbook",
+      "payments"
+    ],
+    "namespace": "engineering",
+    "word_count": 75
+  },
+  {
+    "doc_id": "RUN-003",
+    "title": "Runbook: Database connection pool exhaustion",
+    "document_type": "runbook",
+    "department": "technology",
+    "access_level": "internal",
+    "created_date": "2026-02-02",
+    "tags": [
+      "runbook",
+      "technology"
+    ],
+    "namespace": "engineering",
+    "word_count": 51
+  },
+  {
+    "doc_id": "RUN-004",
+    "title": "Runbook: Core banking end-of-day batch failure",
+    "document_type": "runbook",
+    "department": "technology",
+    "access_level": "internal",
+    "created_date": "2025-07-07",
+    "tags": [
+      "runbook",
+      "technology"
+    ],
+    "namespace": "engineering",
+    "word_count": 45
+  },
+  {
+    "doc_id": "SPEC-001",
+    "title": "Product specification: Instant Fund Transfer v2",
+    "document_type": "product_spec",
+    "department": "payments",
+    "access_level": "internal",
+    "created_date": "2026-04-11",
+    "tags": [
+      "product_spec",
+      "payments"
+    ],
+    "namespace": "product",
+    "word_count": 51
+  },
+  {
+    "doc_id": "SPEC-002",
+    "title": "Product specification: QR Merchant Payments",
+    "document_type": "product_spec",
+    "department": "payments",
+    "access_level": "public",
+    "created_date": "2025-12-01",
+    "tags": [
+      "product_spec",
+      "payments"
+    ],
+    "namespace": "product",
+    "word_count": 40
+  },
+  {
+    "doc_id": "SPEC-003",
+    "title": "Product specification: Credit Card Virtual Cards",
+    "document_type": "product_spec",
+    "department": "cards",
+    "access_level": "internal",
+    "created_date": "2026-06-20",
+    "tags": [
+      "product_spec",
+      "cards"
+    ],
+    "namespace": "product",
+    "word_count": 48
+  }
+]
