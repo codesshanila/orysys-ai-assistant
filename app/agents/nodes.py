@@ -349,6 +349,13 @@ def _response_prompt(state: AssistantState) -> str:
     return "\n\n".join(parts)
 
 
+def _clip(text: str, limit: int) -> str:
+    """Shorten at a word boundary so fallback snippets never end mid-word."""
+    if len(text) <= limit:
+        return text
+    return text[:limit].rsplit(" ", 1)[0].rstrip(" ,;:(") + " …"
+
+
 def extractive_answer(state: AssistantState) -> str:
     """Answer without the LLM: the best passages, research counts and tool output, with citations."""
     lines = ["The AI model is temporarily unavailable, so here is what I found directly in the sources:"]
@@ -360,7 +367,7 @@ def extractive_answer(state: AssistantState) -> str:
     for e in (state.get("evidence") or [])[:4]:
         text = e["text"]
         prefix = f"{e['title']} - {e['section']}: "  # chunks are stored as "<title> - <section>: <body>"
-        snippet = (text[len(prefix):] if text.startswith(prefix) else text).strip()[:220]
+        snippet = _clip((text[len(prefix):] if text.startswith(prefix) else text).strip(), 220)
         label = e["title"] if e["section"] in ("", e["title"]) else f"{e['title']} / {e['section']}"
         lines.append(f"- {label}: {snippet} [{e['chunk_id']}]")
     for t in state.get("tool_results") or []:
