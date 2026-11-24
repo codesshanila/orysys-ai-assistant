@@ -116,6 +116,47 @@ table.scores td.n {text-align:right; color:#5B6675;}
 table.scores td.b {white-space:nowrap;} table.scores td.b span {font-size:.7rem; margin-left:4px;}
 .sb {display:inline-block; width:46px; height:6px; background:#EEF1F5; border-radius:3px; vertical-align:middle;}
 .sb i {display:block; height:6px; border-radius:3px; background:linear-gradient(90deg,#1B6CA8,#5FA8D3);}
+
+/* ---- Responsive: keep everything readable when the window is not maximised ---- */
+.cb-title {white-space:nowrap;}
+.cb-brand > div {min-width:0;}
+.cb-sub {white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.card {overflow:hidden;}
+.card .pill {max-width:100%; overflow:hidden; text-overflow:ellipsis; vertical-align:middle;}
+/* The panel adapts to its own width, whatever the window and sidebar do. */
+.st-key-activity {container-type:inline-size; height:min(920px, calc(100vh - 28px)) !important;}
+@container (max-width: 470px) {
+  .sb {width:30px;}
+  table.scores td.b span {margin-left:3px;}
+}
+@container (max-width: 400px) {
+  table.scores th:nth-child(2), table.scores th:nth-child(3),
+  table.scores td:nth-child(2), table.scores td:nth-child(3) {display:none;}  /* keep chunk, hybrid, rerank */
+  .step {font-size:.68rem; padding:3px 7px;} .step .ms {display:none;}
+  .batches {grid-template-columns:1fr 1fr;}
+  .card {padding:8px 10px;}
+  .pill {font-size:.7rem; padding:1px 8px;}
+}
+@container (max-width: 300px) {
+  .sb {display:none;}
+  .batches {grid-template-columns:1fr;}
+}
+@media (max-width: 1280px) {
+  .cb-right .pill-ghost {display:none;}          /* tech badges go first; the role badge stays */
+  section[data-testid="stSidebar"] {width:250px !important; min-width:250px !important;}
+}
+@media (max-width: 1100px) {
+  .cb-header {padding:12px 14px;}
+  .cb-title {font-size:1rem;} .cb-sub {font-size:.72rem;}
+  .cb-mark {width:32px; height:32px; font-size:.85rem;}
+}
+/* Narrow windows: put the activity panel under the chat instead of squeezing both. */
+@media (max-width: 980px) {
+  [data-testid="stHorizontalBlock"]:has(.st-key-activity) {flex-direction:column !important;}
+  [data-testid="stHorizontalBlock"]:has(.st-key-activity) > [data-testid="stColumn"] {width:100% !important; flex:1 1 100% !important;}
+  [data-testid="stColumn"]:has(.st-key-activity) {position:static;}
+  .st-key-activity {height:auto !important; max-height:none !important;}
+}
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)
