@@ -27,7 +27,6 @@ class Settings(BaseSettings):
     llm_model: str = "claude-sonnet-5-5"
     # Cheap, fast steps (batch analysis in the RLM map phase, validation judge).
     llm_fast_model: str = "claude-haiku-5-5"
-    llm_temperature: float = 0.0
     llm_max_tokens: int = 2048
     llm_timeout_s: float = 60.0
     llm_max_retries: int = 2
