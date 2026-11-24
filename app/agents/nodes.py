@@ -290,7 +290,8 @@ async def tool_executor(state: AssistantState) -> dict:
     needs_approval = [c for c in calls if c["name"] in APPROVAL_REQUIRED and can_use_tool(user["role"], c["name"])]
     decisions: dict = {}
     if needs_approval:
-        emit("approval_required", calls=needs_approval)
+        # No emit here: LangGraph re-runs this node on resume, so an event before interrupt()
+        # would fire twice. The API forwards the interrupt itself as `approval_required`.
         decisions = interrupt({"type": "approval_required", "calls": needs_approval})
         emit("approval_result", decision=decisions)
 
@@ -357,8 +358,11 @@ def extractive_answer(state: AssistantState) -> str:
         for t in (r.get("themes") or [])[:4]:
             lines.append(f"- {t['label']}: {t['count']} document(s) ({', '.join(t['doc_ids'][:6])})")
     for e in (state.get("evidence") or [])[:4]:
-        snippet = e["text"].split(":", 1)[-1].strip()[:220]
-        lines.append(f"- {e['title']} / {e['section']}: {snippet} [{e['chunk_id']}]")
+        text = e["text"]
+        prefix = f"{e['title']} - {e['section']}: "  # chunks are stored as "<title> - <section>: <body>"
+        snippet = (text[len(prefix):] if text.startswith(prefix) else text).strip()[:220]
+        label = e["title"] if e["section"] in ("", e["title"]) else f"{e['title']} / {e['section']}"
+        lines.append(f"- {label}: {snippet} [{e['chunk_id']}]")
     for t in state.get("tool_results") or []:
         if t["status"] == "ok":
             lines.append(f"- Tool {t['name']}: {json.dumps(t['output'])[:300]} [tool:{t['name']}]")

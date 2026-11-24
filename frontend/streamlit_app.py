@@ -89,6 +89,8 @@ def describe(ev: dict) -> str | None:
         return f"🛠 `{ev['tool']}` → **{ev['status']}** {ev.get('error') or ''} ({ev.get('elapsed_ms', 0)} ms)"
     if t == "approval_required":
         return "✋ approval required for: " + ", ".join(c["name"] for c in ev["calls"])
+    if t == "approval_result":
+        return "👤 human decision: " + ("approved" if (ev.get("decision") or {}).get("approved") else "rejected")
     if t == "memory":
         return f"🧠 memory {ev['action']}: " + json.dumps({k: v for k, v in ev.items() if k not in ('type', 'ts', 'action')})[:200]
     if t == "validation":

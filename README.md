@@ -71,7 +71,7 @@ extractive answers with citations, heuristic batch analysis) and retrieval uses 
 index. The test suite runs this way:
 
 ```bash
-python -m pytest -q        # 62 tests, ~10 s, no network
+python -m pytest -q        # 63 tests, ~10 s, no network
 ```
 
 ## Project layout

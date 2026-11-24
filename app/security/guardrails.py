@@ -99,22 +99,28 @@ def validate_user_input(text: str) -> GuardResult:
 
 
 def sanitize_retrieved(text: str) -> tuple[str, list[str]]:
-    """Neutralise instruction-like lines inside retrieved documents."""
-    findings: list[str] = []
+    """Neutralise instruction-like sentences inside retrieved documents.
+
+    Works sentence by sentence (chunks are often a single line), so the legitimate content
+    around an injected instruction still reaches the model.
+    """
     clean_lines = []
+    removed = False
     for line in text.splitlines() or [text]:
-        if INSTRUCTION_LINE.search(line):
-            findings.append("retrieved_instruction_neutralised")
-            clean_lines.append("[removed: instruction-like text found in source document]")
-        else:
+        if not INSTRUCTION_LINE.search(line):
             clean_lines.append(line)
-    # Within single-line chunk texts, neutralise sentence by sentence.
-    out = "\n".join(clean_lines)
-    if not findings and INSTRUCTION_LINE.search(out):
-        parts = re.split(r"(?<=[.!?])\s+", out)
-        out = " ".join("[removed: instruction-like text]" if INSTRUCTION_LINE.search(p) else p for p in parts)
-        findings.append("retrieved_instruction_neutralised")
-    return out, findings
+            continue
+        removed = True
+        kept: list[str] = []
+        for sentence in re.split(r"(?<=[.!?])\s+", line):
+            if INSTRUCTION_LINE.search(sentence):
+                if not kept or kept[-1] != "[removed: instruction-like text]":
+                    kept.append("[removed: instruction-like text]")
+            else:
+                kept.append(sentence)
+        clean_lines.append(" ".join(kept))
+    findings = ["retrieved_instruction_neutralised"] if removed else []
+    return "\n".join(clean_lines), findings
 
 
 def wrap_evidence(chunk_id: str, title: str, text: str) -> str:
