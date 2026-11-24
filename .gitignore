@@ -15,3 +15,9 @@ venv/
 data/runtime/
 *.sqlite
 *.db
+
+# Local agent working notes (kept out of the public repo)
+AGENTS.md
+CLAUDE.md
+HANDOFF.md
+scripts/codex-continue.ps1
