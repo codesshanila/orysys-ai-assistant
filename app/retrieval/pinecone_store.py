@@ -35,6 +35,10 @@ class PineconeStore:
         self.settings = settings
         self._pc: PineconeAsyncio | None = None
         self._host: str | None = None
+        # One index client (and its HTTP connection pool) for the life of the process.
+        # Opening a client per query added ~2 s of connection setup to every search.
+        self._index_client = None
+        self._embed_cache: dict[tuple[str, str], list[float]] = {}
 
     async def _client(self) -> PineconeAsyncio:
         if self._pc is None:
@@ -42,6 +46,9 @@ class PineconeStore:
         return self._pc
 
     async def close(self) -> None:
+        if self._index_client is not None:
+            await self._index_client.close()
+            self._index_client = None
         if self._pc is not None:
             await self._pc.close()
             self._pc = None
@@ -60,13 +67,25 @@ class PineconeStore:
         desc = await pc.describe_index(name)
         self._host = desc.host
 
+    async def warm_up(self) -> None:
+        """Resolve the index host and open the connection pool before the first user query."""
+        try:
+            await (await self._index()).describe_index_stats()
+        except Exception as exc:
+            log.warning("pinecone_warm_up_failed", error=str(exc))
+
     async def _index(self):
-        if self._host is None:
-            await self.ensure_index()
-        pc = await self._client()
-        return pc.IndexAsyncio(host=self._host)
+        if self._index_client is None:
+            if self._host is None:
+                await self.ensure_index()
+            pc = await self._client()
+            self._index_client = pc.IndexAsyncio(host=self._host)
+        return self._index_client
 
     async def embed(self, texts: list[str], input_type: str) -> list[list[float]]:
+        # Queries repeat within a turn (retrieval agent, research plan, tools); cache them.
+        if input_type == "query" and len(texts) == 1 and (texts[0], input_type) in self._embed_cache:
+            return [self._embed_cache[(texts[0], input_type)]]
         pc = await self._client()
         try:
             out: list[list[float]] = []
@@ -77,14 +96,17 @@ class PineconeStore:
                     parameters={"input_type": input_type, "truncate": "END"},
                 )
                 out.extend([list(item.values) for item in res.data])
+            if input_type == "query" and len(texts) == 1:
+                if len(self._embed_cache) > 512:
+                    self._embed_cache.clear()
+                self._embed_cache[(texts[0], input_type)] = out[0]
             return out
         except Exception as exc:  # SDK raises several types; normalise
             raise VectorStoreError(f"embedding failed: {exc}") from exc
 
     async def upsert(self, vectors: list[dict], namespace: str) -> None:
         index = await self._index()
-        async with index:
-            await index.upsert(vectors=vectors, namespace=namespace, batch_size=100, show_progress=False)
+        await index.upsert(vectors=vectors, namespace=namespace, batch_size=100, show_progress=False)
 
     async def query(
         self,
@@ -98,18 +120,11 @@ class PineconeStore:
         d, s = scale_hybrid(dense, sparse, alpha)
         try:
             index = await self._index()
-            async with index:
-                kwargs = dict(
-                    vector=d,
-                    top_k=top_k,
-                    namespace=namespace,
-                    filter=metadata_filter,
-                    include_metadata=True,
-                    include_values=True,
-                )
-                if s["indices"]:
-                    kwargs["sparse_vector"] = s
-                res = await index.query(**kwargs)
+            kwargs = dict(vector=d, top_k=top_k, namespace=namespace, filter=metadata_filter,
+                          include_metadata=True, include_values=True)
+            if s["indices"]:
+                kwargs["sparse_vector"] = s
+            res = await index.query(**kwargs)
         except Exception as exc:
             raise VectorStoreError(f"query failed in namespace={namespace}: {exc}") from exc
         matches = []

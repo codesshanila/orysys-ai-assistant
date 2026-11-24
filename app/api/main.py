@@ -57,10 +57,14 @@ async def lifespan(app: FastAPI):
     Path(settings.checkpoint_db_path).parent.mkdir(parents=True, exist_ok=True)
     async with AsyncSqliteSaver.from_conn_string(settings.checkpoint_db_path) as saver:
         app.state.graph = build_graph(checkpointer=saver)
-        get_retriever()  # load the chunk store and BM25 stats once, at startup
+        retriever = get_retriever()  # load the chunk store and BM25 stats once, at startup
+        if retriever.store is not None:
+            await retriever.store.warm_up()
         log.info("startup", tracing=tracing, llm=get_gateway().configured,
                  pinecone=bool(settings.pinecone_api_key))
         yield
+        if retriever.store is not None:
+            await retriever.store.close()
 
 
 app = FastAPI(title=settings.assistant_name, version="1.0.0", lifespan=lifespan)
