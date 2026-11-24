@@ -104,7 +104,7 @@ def render_activity(container, events: list[dict]) -> None:
         active = next((e for e in reversed(events) if e["type"] == "node_start"), None)
         done = any(e["type"] == "run_finished" for e in events)
         waiting = any(e["type"] == "approval_required" for e in events) and not done
-        state = "⏸ waiting for approval" if waiting else ("finished" if done else "running")
+        state = "⏸ waiting for approval" if waiting else ("finished" if done else ("running" if events else "idle"))
         st.markdown(f"**State:** {state}  \n**Active node:** "
                     f"`{NODE_LABELS.get(active['node'], active['node']) if active else '-'}`")
         lines = [line for line in (describe(e) for e in events) if line]
