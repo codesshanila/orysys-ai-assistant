@@ -1,0 +1,12 @@
+.env
+*.env
+API Keys.txt
+*.key
+.git
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+data/runtime
+tests

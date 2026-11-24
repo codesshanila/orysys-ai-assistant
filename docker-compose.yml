@@ -1,0 +1,47 @@
+# docker compose up --build
+#   frontend  http://localhost:8501
+#   backend   http://localhost:8000/docs
+#   mcp       internal only (backend -> http://mcp:8001/mcp)
+services:
+  mcp:
+    build: .
+    command: ["python", "-m", "mcp_server.server"]
+    environment:
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: "8001"
+    restart: unless-stopped
+
+  backend:
+    build: .
+    env_file: .env
+    environment:
+      MCP_SERVER_URL: http://mcp:8001/mcp
+      LOG_JSON: "true"
+    ports:
+      - "8000:8000"
+    volumes:
+      - runtime:/app/data/runtime   # conversation checkpoints + long-term memory survive restarts
+    depends_on:
+      - mcp
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  frontend:
+    build: .
+    command: ["streamlit", "run", "frontend/streamlit_app.py", "--server.port", "8501",
+              "--server.address", "0.0.0.0", "--server.headless", "true"]
+    environment:
+      BACKEND_URL: http://backend:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  runtime:
