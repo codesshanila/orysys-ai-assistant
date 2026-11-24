@@ -78,9 +78,24 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     log_json: bool = True
     langsmith_project: str = "orysys-ai-assistant"
+    langsmith_api_key: str = ""
+    langsmith_tracing: bool = True
+    checkpoint_db_path: str = str(ROOT_DIR / "data" / "runtime" / "checkpoints.sqlite")
 
     # --- Frontend -----------------------------------------------------------------
     backend_url: str = "http://localhost:8000"
+
+
+def configure_tracing(settings: "Settings") -> bool:
+    """LangSmith reads os.environ, which pydantic-settings does not populate from .env."""
+    import os
+
+    if not (settings.langsmith_tracing and settings.langsmith_api_key):
+        os.environ["LANGSMITH_TRACING"] = "false"
+        return False
+    os.environ.update({"LANGSMITH_TRACING": "true", "LANGSMITH_API_KEY": settings.langsmith_api_key,
+                       "LANGSMITH_PROJECT": settings.langsmith_project})
+    return True
 
 
 @lru_cache
