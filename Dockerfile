@@ -13,6 +13,7 @@ RUN pip install -r requirements.txt
 COPY app ./app
 COPY mcp_server ./mcp_server
 COPY frontend ./frontend
+COPY .streamlit ./.streamlit
 COPY scripts ./scripts
 COPY data/documents ./data/documents
 COPY data/index ./data/index

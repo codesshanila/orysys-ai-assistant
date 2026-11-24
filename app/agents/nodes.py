@@ -425,6 +425,23 @@ async def memory_save(state: AssistantState) -> dict:
         emit("memory", action="saved", long_term=True, citations=citations)
     else:
         emit("memory", action="skipped", reason="blocked requests are not remembered")
-    emit("final", answer=answer, citations=citations, degraded=state.get("degraded") or [],
-         intent=state.get("intent", ""), plan=state.get("plan") or [])
+    emit("final", answer=answer, citations=citations, sources=_cited_sources(state, citations),
+         degraded=state.get("degraded") or [], intent=state.get("intent", ""), plan=state.get("plan") or [])
     return {"messages": [AIMessage(answer)]}
+
+
+def _cited_sources(state: AssistantState, citations: list[str]) -> list[dict]:
+    """Metadata and passage for each cited chunk, so the UI can show sources next to the answer."""
+    by_id = {e["chunk_id"]: e for e in state.get("evidence") or [] if e.get("chunk_id")}
+    sources = []
+    for cid in citations:
+        e = by_id.get(cid)
+        if not e:
+            continue
+        prefix = f"{e.get('title')} - {e.get('section')}: "
+        text = e.get("text") or ""
+        sources.append({"chunk_id": cid, "doc_id": e.get("doc_id"), "title": e.get("title"),
+                        "document_type": e.get("document_type"), "access_level": e.get("access_level"),
+                        "created_date": e.get("created_date"),
+                        "passage": (text[len(prefix):] if text.startswith(prefix) else text)[:600]})
+    return sources

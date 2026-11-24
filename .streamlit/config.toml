@@ -1,0 +1,25 @@
+[client]
+toolbarMode = "minimal"
+showSidebarNavigation = false
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base = "light"
+primaryColor = "#0F4C81"
+backgroundColor = "#F4F6FA"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#1B2430"
+borderColor = "#DDE3EC"
+linkColor = "#0F4C81"
+baseRadius = "medium"
+font = "sans-serif"
+codeFont = "monospace"
+
+[theme.sidebar]
+backgroundColor = "#0B2545"
+secondaryBackgroundColor = "#13315C"
+textColor = "#E6EDF6"
+primaryColor = "#5FA8D3"
+borderColor = "#1F4570"
