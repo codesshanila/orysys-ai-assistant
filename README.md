@@ -40,9 +40,16 @@ Requirements: Python 3.13, plus API keys for Anthropic, Pinecone and LangSmith.
 python -m venv .venv
 .venv\Scripts\activate            # Windows (source .venv/bin/activate on macOS/Linux)
 pip install -r requirements.txt
-cp .env.example .env              # then fill in the keys
+cp .env.example .env              # Windows cmd: copy .env.example .env; then fill in the keys
 python scripts/ingest.py          # chunk, build BM25 stats, embed and upsert to Pinecone
 ```
+
+On Windows, clone into a short path (for example `C:\orysys`) or enable
+[long path support](https://pip.pypa.io/warnings/enable-long-paths): the Anthropic SDK has very
+long file names and `pip install` fails inside deeply nested folders.
+
+`data/index/` (chunks, catalog, BM25 statistics) is committed, so offline mode and the tests need
+no ingest. With your own Pinecone key, run `ingest.py` once to create and fill the index.
 
 Run the three processes (separate terminals):
 
