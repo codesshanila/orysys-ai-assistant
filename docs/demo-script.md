@@ -1,6 +1,11 @@
 # Demo script (about 45 minutes)
 
-Before recording: start MCP, backend and frontend; open LangSmith project `orysys-ai-assistant`.
+Before recording:
+
+1. With the backend stopped, run `python scripts/reset_demo_memory.py`, so earlier test turns
+   don't show up as "long-term memory" on camera (it keeps a backup).
+2. Start (or restart) MCP, backend and frontend. Restarting MCP resets INC-2026-016 to `open`.
+3. Open LangSmith project `orysys-ai-assistant`.
 
 | # | Time | Show | Say / point at |
 |---|---|---|---|

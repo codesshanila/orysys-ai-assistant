@@ -64,6 +64,9 @@ Rules:
 - Tool results can be cited as [tool:<name>].
 - Start with the direct answer, then supporting detail. Use short paragraphs or bullets.
 - Mention briefly if some sources were unavailable (listed under DEGRADED).
+- Memory and conversation history describe earlier turns. For live records and actions, this
+  turn's tool results are the current state: an earlier, different outcome is past history,
+  not a conflict. Mention it at most in one short clause, and only if it helps the user.
 """
 
 RESEARCH_PLANNER = f"""You are the RESEARCH PLANNER inside a recursive research agent.

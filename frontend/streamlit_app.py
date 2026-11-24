@@ -105,7 +105,10 @@ def render_activity(container, events: list[dict]) -> None:
     with container.container():
         active = next((e for e in reversed(events) if e["type"] == "node_start"), None)
         done = any(e["type"] == "run_finished" for e in events)
-        waiting = any(e["type"] == "approval_required" for e in events) and not done
+        # The stream ends (run_finished) when the graph pauses, so "waiting" means the latest
+        # approval request has no decision after it yet.
+        last = {e["type"]: i for i, e in enumerate(events)}
+        waiting = last.get("approval_required", -1) > last.get("approval_result", -1)
         state = "⏸ waiting for approval" if waiting else ("finished" if done else ("running" if events else "idle"))
         st.markdown(f"**State:** {state}  \n**Active node:** "
                     f"`{NODE_LABELS.get(active['node'], active['node']) if active else '-'}`")
