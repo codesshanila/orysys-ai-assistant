@@ -59,7 +59,15 @@ uvicorn app.api.main:app --port 8000              # backend     :8000  (OpenAPI 
 streamlit run frontend/streamlit_app.py           # frontend    :8501
 ```
 
-Or with Docker: `docker compose up --build`, then open http://localhost:8501.
+Or with Docker (tested with Docker Desktop 29 and Compose v5 on Windows/WSL 2):
+
+```bash
+docker compose up --build        # needs .env; frontend :8501, backend :8000, MCP internal only
+```
+
+Stop any local servers first so ports 8000 and 8501 are free. The backend waits for MCP, and the
+frontend waits for a healthy backend. Conversation checkpoints and long-term memory live in the
+`runtime` volume, so they survive restarts. Use `docker compose down -v` to clear them.
 
 ### Demo users (brief option A: hardcoded users and roles)
 
