@@ -1,8 +1,8 @@
 """Per-user token bucket rate limiter.
 
 Each user has a bucket of `capacity` tokens that refills continuously at
-`refill_per_minute`. A request costs 1 token (deep research costs more - it fans out to
-many LLM calls). Empty bucket -> RateLimitExceeded with an exact Retry-After.
+`refill_per_minute`. Each chat turn costs 1 token (`acquire` takes a `cost`, so heavier
+operations can be priced higher). Empty bucket -> RateLimitExceeded with an exact Retry-After.
 
 In-memory and asyncio-safe, which is right for a single-instance POC. Multi-instance
 deployments would keep the same algorithm in Redis (one Lua script) - see decisions.md.
