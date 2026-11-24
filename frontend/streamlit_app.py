@@ -42,8 +42,7 @@ CSS = """
 <style>
 #MainMenu, [data-testid="stAppDeployButton"], footer {display: none !important;}
 /* Streamlit fades elements from the previous run while a long turn streams; keep the page crisp. */
-.stale-element, [data-stale="true"] {opacity: 1 !important; filter: none !important; transition: none !important;}
-[data-testid="stHeader"] {background: transparent;}
+.stale-element, [data-stale="true"] {opacity: 1 !important; filter: none !important; transition: none !important;}[data-testid="stHeader"] {background: transparent;}
 .block-container, [data-testid="stMainBlockContainer"] {padding-top: 1.2rem; padding-bottom: 1rem; max-width: 1500px;}
 .cb-header {display:flex; align-items:center; justify-content:space-between; background:#0B2545; color:#fff;
   border-radius:12px; padding:14px 20px; margin-bottom:14px;}
@@ -97,6 +96,14 @@ CSS = """
 [data-testid="stChatMessage"] h4 {font-size:1.02rem !important; font-weight:700; margin:.7rem 0 .3rem !important;
   padding:0 !important;}
 .now {font-size:.8rem; color:#0F4C81; background:#EAF3FC; border-radius:8px; padding:6px 10px; margin-bottom:6px;}
+.panel {font-size:.84rem; color:#1B2430;}
+/* Keep the activity panel in view while the chat scrolls. */
+[data-testid="stHorizontalBlock"]:has(.st-key-activity) {align-items: flex-start;}
+[data-testid="stColumn"]:has(.st-key-activity) {position: sticky; top: 12px; align-self: flex-start;}
+details.code {background:#fff; border:1px solid #DDE3EC; border-radius:10px; padding:8px 12px; margin-bottom:8px;}
+details.code summary {cursor:pointer; color:#0F4C81; font-size:.8rem;}
+details.code pre {background:#F6F8FB; border-radius:6px; padding:8px; margin:8px 0 0; font-size:.72rem;
+  white-space:pre-wrap; max-height:320px; overflow:auto;}
 details.more summary {cursor:pointer; color:#0F4C81; font-size:.76rem; margin-top:6px;}
 details.more div {margin-top:4px;}
 .q {padding:5px 0; border-top:1px solid #EEF1F5;} .q:first-of-type {border-top:none;}
@@ -171,8 +178,22 @@ def humanise_degraded(flag: str) -> str:
     source, _, reason = flag.partition(":")
     names = {"vector_db": "Vector database", "llm": "AI model", "mcp": "Enterprise data service",
              "research": "Research agent"}
-    name = names.get(source.strip(), source.strip().capitalize())
-    return f"{name} unavailable{(' (' + reason.strip() + ')') if reason.strip() else ''}"
+    source = source.strip()
+    if source.startswith("tool "):
+        name = TOOL_LABELS.get(source[5:], source[5:])
+    else:
+        name = names.get(source, source.capitalize())
+    reason = re.sub(r"^\w+Error:\s*", "", reason.strip()).rstrip(".")
+    if "chaos" in reason or "injected" in reason:
+        reason = "simulated outage"
+    reason = reason.replace("(", "").replace(")", "")
+    return f"{name} unavailable{(' (' + reason + ')') if reason else ''}"
+
+
+def plain(text: str) -> str:
+    """Passages are stored as Markdown; show them as readable plain text in the source cards."""
+    text = re.sub(r"\*\*|__|`", "", text)
+    return re.sub(r"\s*\|\s*", " · ", text).strip(" ·")
 
 
 def render_sources(sources: list[dict]) -> None:
@@ -193,7 +214,7 @@ def render_sources(sources: list[dict]) -> None:
                 unsafe_allow_html=True)
             for c in chunks:
                 st.markdown(f'<div class="card"><span class="cite">{esc(c["chunk_id"])}</span> '
-                            f'{esc(c.get("passage") or "")}</div>', unsafe_allow_html=True)
+                            f'{esc(plain(c.get("passage") or ""))}</div>', unsafe_allow_html=True)
 
 
 def render_message(i: int, msg: dict) -> None:
@@ -264,8 +285,16 @@ def access_from_filter(flt: dict) -> list[str]:
     return []
 
 
+_PANEL: list[str] = []
+
+
+def put(html_text: str, **_ignored) -> None:
+    """Collect panel HTML; render_activity outputs it in one go."""
+    _PANEL.append(html_text)
+
+
 def section(title: str) -> None:
-    st.markdown(f'<div class="sec">{esc(title)}</div>', unsafe_allow_html=True)
+    put(f'<div class="sec">{esc(title)}</div>', unsafe_allow_html=True)
 
 
 def render_supervisor(events: list[dict]) -> None:
@@ -276,7 +305,7 @@ def render_supervisor(events: list[dict]) -> None:
     plan = " → ".join(NODE_LABELS.get(p, p) for p in sup.get("plan", [])) or "answer directly"
     filters = sup.get("filters") or {}
     flt = " ".join(pill(f"{k}: {', '.join(v) if isinstance(v, list) else v}", "st-info") for k, v in filters.items())
-    st.markdown(
+    put(
         f'<div class="card"><div class="row">{pill(sup.get("intent", "").replace("_", " "), "st-info")} '
         f'<b>{esc(plan)}</b></div>'
         + (f'<div class="row" style="margin-top:6px">{flt}</div>' if flt else "")
@@ -300,7 +329,7 @@ def render_retrieval(events: list[dict]) -> None:
                     f'<div class="row">{flag}<span class="k">{e["hits"]} hits · {e.get("elapsed_ms", 0)} ms · '
                     f'{esc(", ".join(e.get("namespaces") or []))}</span></div></div>')
     acc = " ".join(pill(a, "acc-" + a) for a in access)
-    st.markdown(f'<div class="card"><div class="row"><span class="k">Role access filter</span>{acc}</div>'
+    put(f'<div class="card"><div class="row"><span class="k">Role access filter</span>{acc}</div>'
                 + "".join(rows) + "</div>", unsafe_allow_html=True)
     best: dict[str, dict] = {}
     for e in done:
@@ -322,7 +351,7 @@ def render_retrieval(events: list[dict]) -> None:
         body = "".join(
             f'<tr title="{esc(r["title"])}"><td class="c">{esc(r["id"])}</td><td class="n">{num(r["dense"])}</td>'
             f'<td class="n">{num(r["sparse"])}</td>{bar(r["hybrid"])}{bar(r.get("rerank"))}</tr>' for r in table)
-        st.markdown('<div class="card" style="padding:6px 8px"><table class="scores"><thead><tr><th>Chunk</th>'
+        put('<div class="card" style="padding:6px 8px"><table class="scores"><thead><tr><th>Chunk</th>'
                     '<th>Dense</th><th>Sparse</th><th>Hybrid</th><th>Rerank</th></tr></thead><tbody>'
                     f'{body}</tbody></table><div class="k" style="margin-top:4px">hybrid = 0.6 · dense + 0.4 · '
                     'sparse, then cross-encoder rerank · hover a row for the document</div></div>',
@@ -349,15 +378,15 @@ def render_research(events: list[dict]) -> None:
         if execute:
             stats.append(f"{execute['chunks']} sections pulled from {len(execute['documents'])} documents")
             stats.append(f"{execute['batches']} parallel batches")
-        st.markdown(f'<div class="card"><div class="row"><b>{title}</b>'
+        put(f'<div class="card"><div class="row"><b>{title}</b>'
                     + (pill("LLM plan" if plan and plan.get("source") == "llm" else "default plan", "st-info")
                        if plan else "")
                     + f'</div><div style="margin:4px 0">{q}</div><div class="k">{esc(" · ".join(stats))}</div>'
                     + (f'<div style="margin-top:4px">{esc(plan.get("rationale", ""))}</div>' if plan else "")
                     + "</div>", unsafe_allow_html=True)
         if plan and plan.get("code"):
-            with st.expander(f"Generated Python search plan (depth {depth})"):
-                st.code(plan["code"], language="python")
+            put(f'<details class="code"><summary>Generated Python search plan (depth {depth})</summary>'
+                f'<pre>{esc(plan["code"])}</pre></details>')
         if batches:
             cells = []
             for b in sorted(batches, key=lambda x: x.get("index", 0)):
@@ -367,7 +396,7 @@ def render_research(events: list[dict]) -> None:
                              f'{pill("failed" if failed else b.get("source", "done"), cls)}<br>'
                              f'{esc(", ".join(b.get("documents") or []))}<br>'
                              f'<span class="k">{b.get("findings", 0)} findings</span></div>')
-            st.markdown('<div class="batches">' + "".join(cells) + "</div>", unsafe_allow_html=True)
+            put('<div class="batches">' + "".join(cells) + "</div>", unsafe_allow_html=True)
         if agg and agg.get("themes"):
             top = max(t["count"] for t in agg["themes"]) or 1
             bars = "".join(
@@ -376,7 +405,7 @@ def render_research(events: list[dict]) -> None:
                 f"</div></div>" for t in agg["themes"])
             fu = ("<div class='k' style='margin-top:6px'>Follow-up: " + esc("; ".join(agg["follow_ups"])) + "</div>"
                   if agg.get("follow_ups") else "")
-            st.markdown(f'<div class="card"><div class="k">Recurring themes (counted from batch findings)</div>'
+            put(f'<div class="card"><div class="k">Recurring themes (counted from batch findings)</div>'
                         f"{bars}{fu}</div>", unsafe_allow_html=True)
 
 
@@ -418,7 +447,7 @@ def render_tools(events: list[dict]) -> None:
         shown.add(r["tool"])
         cls = {"ok": "st-ok", "rejected": "st-warn"}.get(r["status"], "st-bad")
         detail = r.get("error") or tool_summary(r["tool"], r.get("output_preview") or "")
-        st.markdown(f'<div class="card tool {esc(r["status"])}"><div class="row">'
+        put(f'<div class="card tool {esc(r["status"])}"><div class="row">'
                     f'<b>{esc(TOOL_LABELS.get(r["tool"], r["tool"]))}</b>{pill(r["status"], cls)}'
                     f'<span class="k">{r.get("elapsed_ms", 0)} ms</span></div>'
                     f'<div class="k" style="margin-top:3px">{esc(fmt_args(r.get("args", {})))}</div>'
@@ -426,13 +455,13 @@ def render_tools(events: list[dict]) -> None:
                     + "</div>", unsafe_allow_html=True)
     for c in (planned or {}).get("planned_calls", []):
         if c["name"] not in shown:
-            st.markdown(f'<div class="card tool"><div class="row"><b>{esc(TOOL_LABELS.get(c["name"], c["name"]))}'
+            put(f'<div class="card tool"><div class="row"><b>{esc(TOOL_LABELS.get(c["name"], c["name"]))}'
                         f'</b>{pill("planned", "st-idle")}</div><div class="k" style="margin-top:3px">'
                         f'{esc(fmt_args(c.get("args", {})))}</div></div>', unsafe_allow_html=True)
     decision = next((e for e in reversed(events) if e["type"] == "approval_result"), None)
     if decision:
         ok = (decision.get("decision") or {}).get("approved")
-        st.markdown(f'<div class="row">{pill("human decision: " + ("approved" if ok else "rejected"), "st-ok" if ok else "st-warn")}</div>',
+        put(f'<div class="row">{pill("human decision: " + ("approved" if ok else "rejected"), "st-ok" if ok else "st-warn")}</div>',
                     unsafe_allow_html=True)
 
 
@@ -459,7 +488,7 @@ def render_safety(events: list[dict]) -> None:
                 chips.append(pill(f"invalid citation {bad}", "st-bad"))
             for issue in v.get("issues") or []:
                 chips.append(pill(issue, "st-warn"))
-    st.markdown('<div class="row">' + " ".join(chips) + "</div>", unsafe_allow_html=True)
+    put('<div class="row">' + " ".join(chips) + "</div>", unsafe_allow_html=True)
 
 
 def render_memory(events: list[dict]) -> None:
@@ -479,7 +508,7 @@ def render_memory(events: list[dict]) -> None:
             lines.append("Saved this answer to long-term memory.")
         elif m["action"] == "skipped":
             lines.append("Not remembered: " + m.get("reason", ""))
-    st.markdown('<div class="card">' + "<br>".join(esc(x) for x in lines) + "</div>", unsafe_allow_html=True)
+    put('<div class="card">' + "<br>".join(esc(x) for x in lines) + "</div>", unsafe_allow_html=True)
 
 
 def now_line(events: list[dict]) -> str:
@@ -515,53 +544,68 @@ def now_line(events: list[dict]) -> str:
         if t == "node_start":
             return {"input_guard": "checking the request", "memory_load": "loading memory",
                     "supervisor": "planning", "response": "writing the answer", "validator": "validating",
-                    "memory_save": "saving to memory"}.get(e["node"], NODE_LABELS.get(e["node"], e["node"]))
+                    "memory_save": "saving to memory", "research": "starting the research agent",
+                    "research.explore": "exploring the document catalog",
+                    "research.plan": "writing a Python search plan",
+                    "research.execute_plan": "running the search plan in the sandbox",
+                    "research.analyze_batch": "analysing batches in parallel",
+                    "research.aggregate": "aggregating themes across batches",
+                    "research.recurse": "investigating a follow-up question recursively",
+                    "tool_planner": "choosing tools", "tool_executor": "running tools",
+                    "retrieval": "searching Pinecone (dense + sparse) and reranking",
+                    }.get(e["node"], NODE_LABELS.get(e["node"], e["node"]))
     return "starting"
 
 
 def render_activity(container, events: list[dict]) -> None:
-    with container.container():
-        done = any(e["type"] == "run_finished" for e in events)
-        last = {e["type"]: i for i, e in enumerate(events)}
-        # The stream ends (run_finished) when the graph pauses, so "waiting" means the latest
-        # approval request has no decision after it yet.
-        waiting = last.get("approval_required", -1) > last.get("approval_result", -1)
-        errored = any(e["type"] in ("error", "node_error") for e in events)
-        final = next((e for e in reversed(events) if e["type"] == "final"), None)
-        degraded = bool(final and final.get("degraded"))
-        blocked = any(e["type"] == "validation" and e.get("stage") == "input" and not e.get("allowed", True)
-                      for e in events)
-        if blocked:
-            state = pill("⛔ blocked by guardrails", "st-bad")
-        elif waiting:
-            state = pill("⏸ waiting for approval", "st-warn")
-        elif errored:
-            state = pill("error", "st-bad")
-        elif done:
-            state = pill("finished · degraded" if degraded else "finished", "st-warn" if degraded else "st-ok")
-        elif events:
-            state = pill("● running", "st-info")
-        else:
-            state = pill("idle", "st-idle")
-        total = sum(int(e.get("elapsed_ms") or 0) for e in events
-                    if e["type"] == "node_end" and not str(e.get("node", "")).startswith("research."))
-        st.markdown(f'<div class="row">{state}<span class="k" style="color:#5B6675;font-size:.78rem">'
-                    f'{f"{total / 1000:.1f} s in agents" if total else ""}</span></div>', unsafe_allow_html=True)
-        if not events:
-            st.caption("Ask a question to see the agents work: the plan, retrieval scores, research batches, "
-                       "tool calls and safety checks appear here live.")
-            return
-        st.markdown(stepper_html(events, running=not done), unsafe_allow_html=True)
-        if not done:
-            st.markdown(f'<div class="now">Now: {esc(now_line(events))}</div>', unsafe_allow_html=True)
-        for err in (e for e in events if e["type"] in ("error", "node_error")):
-            st.error(f"{err.get('node', '')} {err.get('message') or err.get('error') or ''}".strip())
-        render_supervisor(events)
-        render_research(events)
-        render_retrieval(events)
-        render_tools(events)
-        render_safety(events)
-        render_memory(events)
+    """Draw the whole panel as ONE html element, so a redraw never leaves stale cards behind."""
+    _PANEL.clear()
+    _build_activity(events)
+    container.html('<div class="panel">' + "".join(_PANEL) + "</div>")
+
+
+def _build_activity(events: list[dict]) -> None:
+    done = any(e["type"] == "run_finished" for e in events)
+    last = {e["type"]: i for i, e in enumerate(events)}
+    # The stream ends (run_finished) when the graph pauses, so "waiting" means the latest
+    # approval request has no decision after it yet.
+    waiting = last.get("approval_required", -1) > last.get("approval_result", -1)
+    errored = any(e["type"] in ("error", "node_error") for e in events)
+    final = next((e for e in reversed(events) if e["type"] == "final"), None)
+    degraded = bool(final and final.get("degraded"))
+    blocked = any(e["type"] == "validation" and e.get("stage") == "input" and not e.get("allowed", True)
+                  for e in events)
+    if blocked:
+        state = pill("⛔ blocked by guardrails", "st-bad")
+    elif waiting:
+        state = pill("⏸ waiting for approval", "st-warn")
+    elif errored:
+        state = pill("error", "st-bad")
+    elif done:
+        state = pill("finished · degraded" if degraded else "finished", "st-warn" if degraded else "st-ok")
+    elif events:
+        state = pill("● running", "st-info")
+    else:
+        state = pill("idle", "st-idle")
+    total = sum(int(e.get("elapsed_ms") or 0) for e in events
+                if e["type"] == "node_end" and not str(e.get("node", "")).startswith("research."))
+    put(f'<div class="row">{state}<span class="k" style="color:#5B6675;font-size:.78rem">'
+                f'{f"{total / 1000:.1f} s in agents" if total else ""}</span></div>', unsafe_allow_html=True)
+    if not events:
+        put('<div class="k" style="margin-top:6px">Ask a question to see the agents work: the plan, retrieval '
+            'scores, research batches, tool calls and safety checks appear here live.</div>')
+        return
+    put(stepper_html(events, running=not done), unsafe_allow_html=True)
+    if not done:
+        put(f'<div class="now">Now: {esc(now_line(events))}</div>', unsafe_allow_html=True)
+    for err in (e for e in events if e["type"] in ("error", "node_error")):
+        put(f'<div class="card tool error">{esc((str(err.get("node", "")) + " " + str(err.get("message") or err.get("error") or "")).strip())}</div>')
+    render_supervisor(events)
+    render_research(events)
+    render_retrieval(events)
+    render_tools(events)
+    render_safety(events)
+    render_memory(events)
 
 
 # --- streaming a turn ------------------------------------------------------------------------------
@@ -569,6 +613,8 @@ def stream_turn(path: str, payload: dict, answer_box, activity_box, resume: bool
     # A resumed turn continues the paused one, so keep its events (minus the old end marker).
     ss.events = [e for e in ss.events if e["type"] != "run_finished"] if resume else []
     answer, run_id, final = "", None, {}
+    activity_box.empty()  # drop the previous turn's cards; a redraw alone keeps extra old children
+    render_activity(activity_box, ss.events)
     try:
         with httpx.stream("POST", f"{BACKEND}{path}", json=payload, timeout=300,
                           headers={"Authorization": f"Bearer {ss.token}"}) as resp:
@@ -684,7 +730,7 @@ st.markdown(
 # --- main: chat + activity -------------------------------------------------------------------------
 chat_col, activity_col = st.columns([1.45, 1], gap="medium")
 with activity_col:
-    with st.container(border=True, height=760):
+    with st.container(border=True, height=760, key="activity"):
         st.markdown("**Agent activity**")
         activity_box = st.empty()
         render_activity(activity_box, ss.events)
