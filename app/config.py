@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     retrieval_timeout_s: float = 15.0
 
     # --- RLM research agent -------------------------------------------------------
-    rlm_batch_size: int = 4
+    rlm_batch_size: int = 4      # documents per batch analysed by one sub-agent
     rlm_max_depth: int = 2
     rlm_max_docs: int = 24
     rlm_max_parallel: int = 4

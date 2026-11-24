@@ -104,8 +104,11 @@ AGGREGATOR = f"""You are the AGGREGATOR of a recursive research agent. Combine f
 parallel batch analyses into one synthesis: the overall picture, recurring themes with
 counts and the documents behind them, and notable exceptions.
 
-If an important part of the question is still unanswered and a narrower follow-up search
-would answer it, list up to 2 follow-up questions; otherwise return none.
+Theme labels are short (2-5 words, e.g. "certificate expiry"); doc_ids are document ids
+such as INC-2026-008, never chunk ids. Keep the summary under 200 words.
+
+If an important part of the question is still unanswered and ONE narrower follow-up search
+would answer it, give that follow-up question; otherwise return none.
 
 {UNTRUSTED_DATA_RULE}
 """

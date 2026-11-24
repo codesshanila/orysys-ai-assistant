@@ -147,7 +147,6 @@ class PlanDSL:
         self.catalog = role_catalog(role)
         self.allowed_ids = {row["doc_id"] for row in self.catalog}
         self.retriever = get_retriever()
-        self.max_chunks = settings.rlm_max_docs * 3
         self.timeout = settings.retrieval_timeout_s + 5
         self.degraded = False
 
@@ -203,19 +202,29 @@ class PlanDSL:
                 "sections": self.sections, "batch": self.batch}
 
 
-def _normalise_batches(raw: Any, max_chunks: int, batch_size: int) -> list[list[dict]]:
-    """Plans are model-written: re-check shape, dedupe, sanitise and cap before use."""
+def _normalise_batches(raw: Any, max_docs: int, docs_per_batch: int) -> list[list[dict]]:
+    """Plans are model-written: re-check shape, dedupe, sanitise and cap before use.
+
+    Batches are regrouped by *document* (all chunks of a document stay together), so a
+    batch analyst always sees a whole story and the number of LLM calls is bounded by
+    max_docs / docs_per_batch regardless of how the plan sliced things.
+    """
     if not isinstance(raw, list):
         raise SandboxError("plan must assign `batches` as a list of lists")
-    seen, chunks = set(), []
+    seen: set[str] = set()
+    by_doc: dict[str, list[dict]] = {}
     for group in raw:
         for item in group if isinstance(group, list) else [group]:
-            if isinstance(item, dict) and item.get("chunk_id") and item["chunk_id"] not in seen:
-                seen.add(item["chunk_id"])
-                text, _ = sanitize_retrieved(str(item.get("text", "")))
-                chunks.append({**item, "text": text})
-    chunks = chunks[:max_chunks]
-    return [chunks[i:i + batch_size] for i in range(0, len(chunks), batch_size)]
+            if not (isinstance(item, dict) and item.get("chunk_id") and item.get("doc_id")):
+                continue
+            if item["chunk_id"] in seen or (item["doc_id"] not in by_doc and len(by_doc) >= max_docs):
+                continue
+            seen.add(item["chunk_id"])
+            text, _ = sanitize_retrieved(str(item.get("text", "")))
+            by_doc.setdefault(item["doc_id"], []).append({**item, "text": text})
+    docs = list(by_doc.values())
+    return [[c for doc in docs[i:i + docs_per_batch] for c in doc]
+            for i in range(0, len(docs), docs_per_batch)]
 
 
 # --- nodes ----------------------------------------------------------------------------------
@@ -263,6 +272,8 @@ async def plan(state: ResearchState) -> dict:
 async def execute_plan(state: ResearchState) -> dict:
     settings = get_settings()
     dsl = PlanDSL(state["role"], asyncio.get_running_loop())
+    # Recursive calls answer narrower questions, so they get a smaller document budget.
+    max_docs = settings.rlm_max_docs if state.get("depth", 0) == 0 else max(4, settings.rlm_max_docs // 3)
     f = state.get("filters") or {}
     injected = {**dsl.functions(), "question": state["question"],
                 "filters": {"document_type": (f.get("document_types") or [None])[0],
@@ -276,7 +287,7 @@ async def execute_plan(state: ResearchState) -> dict:
     code = state["plan_code"]
     try:
         env = await run(code)
-        batches = _normalise_batches(env.get("batches"), dsl.max_chunks, settings.rlm_batch_size)
+        batches = _normalise_batches(env.get("batches"), max_docs, settings.rlm_batch_size)
         if not batches:
             raise SandboxError("plan produced no evidence")
         focus = str(env.get("focus") or state["question"])[:300]
@@ -286,7 +297,7 @@ async def execute_plan(state: ResearchState) -> dict:
         errors.append(f"plan failed at runtime: {exc}; reran default plan")
         emit("research", phase="plan_rejected", reason=str(exc))
         env = await run(DEFAULT_PLAN)
-        batches = _normalise_batches(env.get("batches"), dsl.max_chunks, settings.rlm_batch_size)
+        batches = _normalise_batches(env.get("batches"), max_docs, settings.rlm_batch_size)
         focus = str(env.get("focus"))
 
     evidence = [c for b in batches for c in b]
@@ -351,6 +362,15 @@ def count_themes(findings: list[dict]) -> list[dict]:
     return [{"label": label, "count": len(docs), "doc_ids": sorted(docs)} for label, docs in ranked]
 
 
+def _clean_themes(themes: list[Theme]) -> list[dict]:
+    """Models sometimes cite chunk ids as documents; count distinct documents instead."""
+    cleaned = []
+    for t in themes:
+        doc_ids = sorted({d.split("#")[0] for d in t.doc_ids})
+        cleaned.append({"label": t.label, "count": len(doc_ids), "doc_ids": doc_ids})
+    return sorted(cleaned, key=lambda t: t["count"], reverse=True)
+
+
 @node("research.aggregate", "research")
 async def aggregate(state: ResearchState) -> dict:
     findings = state.get("findings") or []
@@ -362,8 +382,8 @@ async def aggregate(state: ResearchState) -> dict:
             Synthesis, prompts.AGGREGATOR,
             f"Question: {state['question']}\nTheme counts (computed): {counted}\nFindings:\n{lines}",
             run_name="research_aggregate")
-        summary, themes = result.summary, [t.model_dump() for t in result.themes] or counted
-        follow_ups = result.follow_ups[:2]
+        summary, themes = result.summary, _clean_themes(result.themes) or counted
+        follow_ups = result.follow_ups[:1]
     except LLMUnavailableError:
         top = ", ".join(f"{t['label']} ({t['count']})" for t in counted[:4])
         summary = (f"Analysed {len({f['doc_id'] for f in findings})} documents in "

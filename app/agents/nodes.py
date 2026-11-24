@@ -46,6 +46,8 @@ log = get_logger(__name__)
 
 BLOCKED_PLACEHOLDER = "[request blocked by input guardrail]"
 MAX_EVIDENCE_IN_PROMPT = 14
+MAX_RESEARCH_EVIDENCE = 70
+EVIDENCE_CHARS = 700  # per chunk in the response prompt; keeps a 70-chunk research answer ~12k tokens
 
 
 def _history_text(messages: list[BaseMessage], limit: int = 8) -> str:
@@ -313,13 +315,23 @@ async def tool_executor(state: AssistantState) -> dict:
 
 
 # --- 5. response agent -----------------------------------------------------------------------------
+def _prompt_evidence(state: AssistantState) -> list[dict]:
+    """Evidence shown to the response agent: everything the research findings cite first,
+    then the best remaining chunks, so research claims can be cited and verified."""
+    evidence = state.get("evidence") or []
+    cited = {cid for f in (state.get("research") or {}).get("findings", []) for cid in f.get("chunk_ids", [])}
+    first = [e for e in evidence if e["chunk_id"] in cited]
+    rest = [e for e in evidence if e["chunk_id"] not in cited]
+    return (first + rest)[:max(MAX_EVIDENCE_IN_PROMPT, len(first))][:MAX_RESEARCH_EVIDENCE]
+
+
 def _response_prompt(state: AssistantState) -> str:
-    evidence = (state.get("evidence") or [])[:MAX_EVIDENCE_IN_PROMPT]
+    evidence = _prompt_evidence(state)
     parts = [f"Memory:\n{state.get('memory_context', '')}",
              f"Conversation so far:\n{_history_text(state.get('messages', []))}",
              f"Question: {state.get('standalone_query') or state['question']}"]
     if evidence:
-        parts.append("EVIDENCE:\n" + "\n".join(wrap_evidence(e["chunk_id"], e["title"], e["text"]) for e in evidence))
+        parts.append("EVIDENCE:\n" + "\n".join(wrap_evidence(e["chunk_id"], e["title"], e["text"][:EVIDENCE_CHARS]) for e in evidence))
     if state.get("research"):
         r = state["research"]
         parts.append(f"RESEARCH SYNTHESIS (from {r.get('batches')} parallel batch analyses):\n{r.get('synthesis')}\n"
