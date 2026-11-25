@@ -118,6 +118,8 @@ table.scores td.b {white-space:nowrap;} table.scores td.b span {font-size:.7rem;
 .sb i {display:block; height:6px; border-radius:3px; background:linear-gradient(90deg,#1B6CA8,#5FA8D3);}
 
 /* ---- Responsive: keep everything readable when the window is not maximised ---- */
+[data-testid="InputInstructions"] {display:none !important;}
+input[type="password"]::-ms-reveal, input[type="password"]::-ms-clear {display:none;}
 .cb-title {white-space:nowrap;}
 .cb-brand > div {min-width:0;}
 .cb-sub {white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
