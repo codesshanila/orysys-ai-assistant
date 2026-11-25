@@ -6,10 +6,13 @@ built as a **LangGraph multi-agent system** with a **Recursive Language Model (R
 research agent, **Pinecone hybrid retrieval**, **LangSmith tracing**, role-based access
 control, layered prompt-injection defences and graceful degradation.
 
-Built for the Orysys AI Lead technical assessment. All documents and enterprise data are synthetic.
+Built for the Orysys AI Lead technical assessment. This is a fictional scenario: all documents,
+incidents, people and enterprise data are synthetic, and the project is not affiliated with,
+endorsed by, or describing any real bank.
 
 | | |
 |---|---|
+| **Demo video** (5 parts, about 36 minutes) | [YouTube playlist](https://www.youtube.com/playlist?list=PLdCxHum3H_mA) |
 | Architecture & diagrams | [docs/architecture.md](docs/architecture.md) |
 | Design decisions, assumptions, trade-offs | [docs/decisions.md](docs/decisions.md) |
 | Demo script | [docs/demo-script.md](docs/demo-script.md) |
