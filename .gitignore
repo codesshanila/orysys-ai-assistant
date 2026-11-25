@@ -21,3 +21,6 @@ AGENTS.md
 CLAUDE.md
 HANDOFF.md
 scripts/codex-continue.ps1
+
+# Demo recordings (uploaded separately, too large for git)
+demo/
