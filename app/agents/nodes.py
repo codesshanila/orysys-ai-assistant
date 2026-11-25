@@ -356,6 +356,29 @@ def _clip(text: str, limit: int) -> str:
     return text[:limit].rsplit(" ", 1)[0].rstrip(" ,;:(") + " …"
 
 
+_TOOL_NAMES = {"mcp_service_catalog": "Service catalog", "mcp_employee_lookup": "Employee directory",
+               "mcp_incident_records": "Incident records", "mcp_update_incident_status": "Incident update",
+               "knowledge_search": "Knowledge search", "python_analysis": "Python analysis"}
+
+
+def _describe_output(output) -> str:
+    """Turn a tool's JSON output into one readable line for the no-LLM fallback answer."""
+    def fmt(value):
+        if isinstance(value, list):
+            return ", ".join(fmt(v) for v in value[:6])
+        if isinstance(value, dict):
+            return "; ".join(f"{k.replace('_', ' ')} {fmt(v)}" for k, v in value.items()
+                             if not isinstance(v, (dict, list)) or v)
+        return str(value)
+
+    if isinstance(output, dict) and len(output) == 1 and isinstance(next(iter(output.values())), list):
+        items = next(iter(output.values()))
+        if not items:
+            return "no matching records"
+        return _clip(" | ".join(fmt(i) for i in items[:3]), 300)
+    return _clip(fmt(output), 300)
+
+
 def extractive_answer(state: AssistantState) -> str:
     """Answer without the LLM: the best passages, research counts and tool output, with citations."""
     lines = ["The AI model is temporarily unavailable, so here is what I found directly in the sources:"]
@@ -372,7 +395,8 @@ def extractive_answer(state: AssistantState) -> str:
         lines.append(f"- {label}: {snippet} [{e['chunk_id']}]")
     for t in state.get("tool_results") or []:
         if t["status"] == "ok":
-            lines.append(f"- Tool {t['name']}: {json.dumps(t['output'])[:300]} [tool:{t['name']}]")
+            lines.append(f"- {_TOOL_NAMES.get(t['name'], t['name'])}: {_describe_output(t['output'])} "
+                         f"[tool:{t['name']}]")
     if len(lines) == 1:
         lines.append("I couldn't find relevant information. Please try again shortly.")
     return "\n".join(lines)
