@@ -273,9 +273,12 @@ def render_message(i: int, msg: dict) -> None:
         if msg.get("run_id"):
             choice = st.feedback("thumbs", key=f"fb-{msg['run_id']}")
             if choice is not None and msg["run_id"] not in ss.feedback_sent:
-                api("POST", "/feedback", json={"run_id": msg["run_id"], "score": int(choice)})
-                ss.feedback_sent.add(msg["run_id"])
-                st.toast("Feedback sent to LangSmith", icon="✅")
+                try:
+                    api("POST", "/feedback", json={"run_id": msg["run_id"], "score": int(choice)})
+                    ss.feedback_sent.add(msg["run_id"])
+                    st.toast("Feedback sent to LangSmith", icon="✅")
+                except httpx.HTTPError:
+                    st.toast("Couldn't reach the backend; feedback not sent. Try again in a moment.", icon="⚠️")
 
 
 # --- activity panel --------------------------------------------------------------------------------
@@ -754,13 +757,22 @@ with st.sidebar:
         st.divider()
         st.markdown("#### Failure injection")
         st.caption("Simulate outages to show graceful degradation.")
-        current = api("GET", "/admin/chaos").json()
-        labels = {"llm_fail": "AI model down", "vector_db_fail": "Vector database down",
-                  "mcp_fail": "Enterprise data (MCP) down", "tool_slow": "Slow tools (timeouts)"}
-        flags = {k: st.toggle(v, value=current.get(k, False)) for k, v in labels.items()}
-        if flags != current:
-            api("POST", "/admin/chaos", json=flags)
-            st.rerun()
+        try:
+            current = api("GET", "/admin/chaos").json()
+        except (httpx.HTTPError, ValueError):
+            current = None
+            st.caption("Backend unreachable right now; refresh in a few seconds.")
+        if current is not None:
+            labels = {"llm_fail": "AI model down", "vector_db_fail": "Vector database down",
+                      "mcp_fail": "Enterprise data (MCP) down", "tool_slow": "Slow tools (timeouts)"}
+            flags = {k: st.toggle(v, value=current.get(k, False)) for k, v in labels.items()}
+            if flags != current:
+                try:
+                    api("POST", "/admin/chaos", json=flags)
+                except httpx.HTTPError:
+                    st.caption("Couldn't update the switches; try again.")
+                else:
+                    st.rerun()
 
 # --- header ----------------------------------------------------------------------------------------
 st.markdown(
