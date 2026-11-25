@@ -13,6 +13,7 @@ endorsed by, or describing any real bank.
 | | |
 |---|---|
 | **Demo video** (5 parts, about 36 minutes) | [YouTube playlist](https://www.youtube.com/playlist?list=PLdCxHum3H_mA) |
+| **LangSmith traces** (public, from the demo run) | [see below](#langsmith-traces-from-the-demo) |
 | Architecture & diagrams | [docs/architecture.md](docs/architecture.md) |
 | Design decisions, assumptions, trade-offs | [docs/decisions.md](docs/decisions.md) |
 | Demo script | [docs/demo-script.md](docs/demo-script.md) |
@@ -117,3 +118,15 @@ one root run per turn (tagged with user role and session), with child runs for e
 each LLM call, the research subgraph and every parallel batch, the `hybrid_search` retriever runs
 (documents with dense/sparse/rerank scores) and tool calls. Thumbs up/down in the UI is attached to
 the turn's run as `user_score` feedback. Logs are structured JSON carrying the same request id.
+
+### LangSmith traces from the demo
+
+Public links (no LangSmith account needed) to runs recorded in the demo video:
+
+| Trace | What to look at |
+|---|---|
+| [Research: payment outages and recurring root causes](https://smith.langchain.com/public/382a2daf-b506-404d-8cf1-4be42ed11d88/r) | `research_agent`: explore, the generated search plan, four `analyze_batch` runs in parallel (Waterfall view), aggregate |
+| [Runbook question and SRE lead (analyst)](https://smith.langchain.com/public/c7480136-0088-4770-a30e-3acbebd66492/r) | Supervisor plan, `hybrid_search` documents with scores, MCP employee lookup, validator |
+| [Vendor meeting with a planted injection](https://smith.langchain.com/public/f76f467c-ecea-4cc1-8f35-30df5f67ffed/r) | Instruction-like text removed from the retrieved chunk before the response agent sees it |
+| [Incident update after human approval](https://smith.langchain.com/public/3ac8df01-22cd-4ae0-8262-58fda02c24a9/r) | Graph resumed from the interrupt; the MCP tool runs without another model call |
+| [Vector database down](https://smith.langchain.com/public/278fc8bc-6c23-4549-aa07-48fa13603b50/r) | Retrieval falls back to the local BM25 index with the same access filter; degraded flags |
